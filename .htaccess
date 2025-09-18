@@ -9,18 +9,8 @@
   AddHandler application/x-httpd-ea-php82___lsphp .php .php8 .phtml
 </IfModule>
 
-# Use mod_authz_core for better reliability
-<IfModule mod_authz_core.c>
-    <RequireAny>
-        Require ip 103.139.68.67
-        Require ip 27.59.111.217
-        Require ip 223.185.23.152
-        Require valid-user
-    </RequireAny>
-</IfModule>
-
-# Authentication setup
-AuthType Basic
-AuthName "Restricted Access"
-AuthUserFile /home/n2ncrm/.htpasswds/medinjury.n2ncrm.com/passwd
-Require valid-user
+# Authentication setup (IP restrictions removed)
+# AuthType Basic
+# AuthName "Restricted Access"
+# AuthUserFile /home/n2ncrm/.htpasswds/medinjury.n2ncrm.com/passwd
+# Require valid-user
