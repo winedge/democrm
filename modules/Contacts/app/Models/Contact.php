@@ -43,6 +43,7 @@ use Modules\Core\Contracts\Resources\Resourceable as ResourceableContract;
 use Modules\Core\Models\Model;
 use Modules\Core\Resource\Resourceable;
 use Modules\Core\Workflow\HasWorkflowTriggers;
+use Modules\Contacts\Enums\LeadStatus;
 use Modules\Deals\Concerns\HasDeals;
 use Modules\Documents\Concerns\HasDocuments;
 use Modules\MailClient\Concerns\HasEmails;
@@ -139,6 +140,7 @@ class Contact extends Model implements Attendeeable, ResourceableContract
         'next_activity_id' => 'int',
         'next_activity_date' => 'datetime',
         'last_contacted_at' => 'datetime',
+        'lead_status' => LeadStatus::class,
     ];
 
     /**
@@ -207,6 +209,82 @@ class Contact extends Model implements Attendeeable, ResourceableContract
     public function shouldSendAttendingNotification(Attendeeable $model): bool
     {
         return (bool) settings('send_contact_attends_to_activity_mail');
+    }
+
+    /**
+     * Determine whether the lead is lost.
+     */
+    public function isLost(): bool
+    {
+        return $this->lead_status === LeadStatus::lost;
+    }
+
+    /**
+     * Determine whether the lead is won.
+     */
+    public function isWon(): bool
+    {
+        return $this->lead_status === LeadStatus::won;
+    }
+
+    /**
+     * Determine whether the lead is a customer.
+     */
+    public function isCustomer(): bool
+    {
+        return $this->lead_status === LeadStatus::customer;
+    }
+
+    /**
+     * Determine whether the lead is hot.
+     */
+    public function isHot(): bool
+    {
+        return $this->lead_status === LeadStatus::hot;
+    }
+
+    /**
+     * Determine whether the lead is warm.
+     */
+    public function isWarm(): bool
+    {
+        return $this->lead_status === LeadStatus::warm;
+    }
+
+    /**
+     * Determine whether the lead is cold.
+     */
+    public function isCold(): bool
+    {
+        return $this->lead_status === LeadStatus::cold;
+    }
+
+    /**
+     * Check whether the lead status can be changed by the current user.
+     */
+    public function canChangeLeadStatus(LeadStatus $status, $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+        
+        if (!$user) {
+            return false;
+        }
+
+        // If the status requires admin permission, check if user is admin
+        if ($status->requiresAdminPermission()) {
+            return $user->isSuperAdmin() || $user->can('edit all contacts');
+        }
+
+        return true;
+    }
+
+    /**
+     * Fill the lead status.
+     */
+    public function fillLeadStatus(LeadStatus $status): static
+    {
+        $this->lead_status = $status;
+        return $this;
     }
 
     /**

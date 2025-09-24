@@ -56,7 +56,8 @@ class MarkAsLost extends Action
      */
     public function authorizedToRun(ActionRequest $request, $model): bool
     {
-        return $request->user()->can('update', $model);
+        // Only admins can mark deals as lost
+        return $request->user()->isSuperAdmin();
     }
 
     /**

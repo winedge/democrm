@@ -33,6 +33,14 @@ class DealStatusController extends ApiController
 
         $status = DealStatus::find($status);
 
+        // Check if user is trying to change to Won or Lost status
+        if (in_array($status, [DealStatus::won, DealStatus::lost])) {
+            // Only admins can change status to Won or Lost
+            if (!$request->user()->isSuperAdmin() && !$request->user()->can('edit all deals')) {
+                abort(JsonResponse::HTTP_FORBIDDEN, 'Only administrators can change deal status to Won or Lost.');
+            }
+        }
+
         // User must unmark the deal as open when the deal status is won or lost in order to change any further statuses
         abort_if(
             $deal->isStatusLocked($status),

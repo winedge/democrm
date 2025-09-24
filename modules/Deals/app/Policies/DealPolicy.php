@@ -13,6 +13,7 @@
 namespace Modules\Deals\Policies;
 
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Modules\Deals\Enums\DealStatus;
 use Modules\Deals\Models\Deal;
 use Modules\Users\Models\User;
 
@@ -74,6 +75,25 @@ class DealPolicy
         }
 
         return false;
+    }
+
+    /**
+     * Determine whether the user can change deal status to Won or Lost.
+     */
+    public function changeStatus(User $user, Deal $deal, ?DealStatus $status = null): bool
+    {
+        // If status is not provided, assume we're checking general permission
+        if ($status === null) {
+            return $this->update($user, $deal);
+        }
+
+        // Only admins can change status to Won or Lost
+        if (($status === DealStatus::won || $status === DealStatus::lost) && !$user->isSuperAdmin()) {
+            return false;
+        }
+
+        // For other status changes, use regular update permissions
+        return $this->update($user, $deal);
     }
 
     /**

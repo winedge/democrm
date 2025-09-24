@@ -42,7 +42,8 @@ class MarkAsWon extends Action
      */
     public function authorizedToRun(ActionRequest $request, $model): bool
     {
-        return $request->user()->can('update', $model);
+        // Only admins can mark deals as won
+        return $request->user()->isSuperAdmin();
     }
 
     /**

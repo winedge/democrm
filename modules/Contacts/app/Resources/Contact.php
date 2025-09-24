@@ -13,6 +13,8 @@
 namespace Modules\Contacts\Resources;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Modules\Activities\Actions\CreateRelatedActivityAction;
 use Modules\Activities\Fields\NextActivityDate;
 use Modules\Activities\Filters\ResourceActivitiesFilter;
@@ -42,12 +44,14 @@ use Modules\Core\Contracts\Resources\WithResourceRoutes;
 use Modules\Core\Facades\ChangeLogger;
 use Modules\Core\Facades\Fields;
 use Modules\Core\Facades\Innoclapps;
+use Modules\Contacts\Enums\LeadStatus;
 use Modules\Core\Fields\Country;
 use Modules\Core\Fields\CreatedAt;
 use Modules\Core\Fields\DateTime;
 use Modules\Core\Fields\Email;
 use Modules\Core\Fields\ID;
 use Modules\Core\Fields\RelationshipCount;
+use Modules\Core\Fields\Select;
 use Modules\Core\Fields\Tags;
 use Modules\Core\Fields\Text;
 use Modules\Core\Fields\UpdatedAt;
@@ -356,6 +360,38 @@ class Contact extends Resource implements AcceptsCustomFields, AcceptsUniqueCust
                 ->showValueWhenUnauthorizedToView(),
 
             Source::make(),
+
+            Select::make('lead_status', __('contacts::lead.status.status'))
+                ->options(collect(LeadStatus::cases())->mapWithKeys(function (LeadStatus $status) {
+                    return [$status->name => $status->label()];
+                })->all())
+                ->rules(['sometimes', 'nullable', 'string', Rule::in(LeadStatus::names())])
+                ->fillUsing(function (Model $model, string $attribute, ResourceRequest $request, mixed $value, string $requestAttribute) {
+                    $status = LeadStatus::find($value);
+
+                    // Check if user is trying to change to Lost or Won status
+                    if ($status && $status->requiresAdminPermission()) {
+                        // Only admins can change status to Lost or Won
+                        if (!$request->user()->isSuperAdmin() && !$request->user()->can('edit all contacts')) {
+                            abort(Response::HTTP_FORBIDDEN, 'Only administrators can change lead status to Lost or Won.');
+                        }
+                    }
+
+                    $model->fillLeadStatus($status);
+                })
+                ->resolveUsing(fn ($model) => $model->lead_status->name)
+                ->displayUsing(fn ($model, $value) => LeadStatus::find($value)->label())
+                ->tapIndexColumn(function (Column $column) {
+                    $column->centered()
+                        ->withMeta([
+                            'statuses' => collect(LeadStatus::cases())->mapWithKeys(function ($status) {
+                                return [$status->value => [
+                                    'name' => $status->name,
+                                    'badge' => $status->badgeVariant(),
+                                ]];
+                            }),
+                        ]);
+                }),
 
             Companies::make()
                 ->excludeFromSettings(Fields::DETAIL_VIEW)

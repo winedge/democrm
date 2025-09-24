@@ -92,6 +92,7 @@ return [
 
     'notifications' => [
         'assigned' => 'You have been assigned to a deal :name by :user',
+        'new_deal_created' => ':creator created a new deal ":name" with amount :amount, expected close date :expected_close_date, in pipeline :pipeline, stage :stage',
     ],
 
     'stage' => [
@@ -150,6 +151,17 @@ return [
 
     'mail_placeholders' => [
         'assigneer' => 'The user name who assigned the deal',
+    ],
+
+    'mail' => [
+        'new_deal_created_subject' => 'New Deal Created: :name',
+        'new_deal_created_greeting' => 'Hello! :creator has created a new deal.',
+        'deal_details' => 'Deal Details',
+        'view_deal' => 'View Deal',
+        'created_by' => 'Created by :creator on :date',
+        'new_deal_created_content' => ':creator created a new deal ":name" with amount :amount, expected close date :expected_close_date, in pipeline :pipeline, stage :stage. View the deal: :url',
+        'new_deal_created_html_content' => '<p>:creator created a new deal "<strong>:name</strong>" with amount <strong>:amount</strong>, expected close date <strong>:expected_close_date</strong>, in pipeline <strong>:pipeline</strong>, stage <strong>:stage</strong>.</p><p><a href=":url">View the deal</a></p>',
+        'new_deal_created_text_content' => ':creator created a new deal ":name" with amount :amount, expected close date :expected_close_date, in pipeline :pipeline, stage :stage. View the deal: :url',
     ],
 
     'workflows' => [

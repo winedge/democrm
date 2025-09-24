@@ -368,6 +368,14 @@ class Deal extends Resource implements AcceptsCustomFields, BillableResource, Ex
                 ->fillUsing(function (Model $model, string $attribute, ResourceRequest $request, mixed $value, string $requestAttribute) {
                     $status = DealStatus::find($value);
 
+                    // Check if user is trying to change to Won or Lost status
+                    if (in_array($status, [DealStatus::won, DealStatus::lost])) {
+                        // Only admins can change status to Won or Lost
+                        if (!$request->user()->isSuperAdmin() && !$request->user()->can('edit all deals')) {
+                            abort(Response::HTTP_FORBIDDEN, 'Only administrators can change deal status to Won or Lost.');
+                        }
+                    }
+
                     abort_if(
                         $model->isStatusLocked($status),
                         Response::HTTP_CONFLICT,

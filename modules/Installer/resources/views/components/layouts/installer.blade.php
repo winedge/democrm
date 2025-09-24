@@ -11,8 +11,13 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
     @php
-        $viteManifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
-        $cssFilePath = $viteManifest['resources/js/app.js']['css'][0] ?? null;
+        $cssFilePath = null;
+        $manifestPath = public_path('build/manifest.json');
+        
+        if (file_exists($manifestPath)) {
+            $viteManifest = json_decode(file_get_contents($manifestPath), true);
+            $cssFilePath = $viteManifest['resources/js/app.js']['css'][0] ?? null;
+        }
     @endphp
 
     @if ($cssFilePath)

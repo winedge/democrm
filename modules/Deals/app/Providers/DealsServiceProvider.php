@@ -41,10 +41,12 @@ class DealsServiceProvider extends ModuleServiceProvider
 
     protected array $mailableTemplates = [
         \Modules\Deals\Mail\UserAssignedToDeal::class,
+        \Modules\Deals\Mail\NewDealCreated::class,
     ];
 
     protected array $notifications = [
         \Modules\Deals\Notifications\UserAssignedToDeal::class,
+        \Modules\Deals\Notifications\NewDealCreated::class,
     ];
 
     /**

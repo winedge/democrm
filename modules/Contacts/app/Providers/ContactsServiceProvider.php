@@ -37,11 +37,13 @@ class ContactsServiceProvider extends ModuleServiceProvider
     protected array $notifications = [
         \Modules\Contacts\Notifications\UserAssignedToCompany::class,
         \Modules\Contacts\Notifications\UserAssignedToContact::class,
+        \Modules\Contacts\Notifications\NewLeadCreated::class,
     ];
 
     protected array $mailableTemplates = [
         \Modules\Contacts\Mail\UserAssignedToCompany::class,
         \Modules\Contacts\Mail\UserAssignedToContact::class,
+        \Modules\Contacts\Mail\NewLeadCreated::class,
     ];
 
     /**

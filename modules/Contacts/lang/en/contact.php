@@ -48,6 +48,16 @@ return [
 
     'notifications' => [
         'assigned' => 'You have been assigned to a contact :name by :user',
+        'new_lead' => 'New lead :name has been created by :creator. Email: :email, Source: :source, Status: :status, Tort: :tort, Company: :company',
+    ],
+
+    'mail' => [
+        'new_lead_subject' => 'New Lead: :name',
+        'new_lead_title' => 'New Lead Created',
+        'new_lead_intro' => 'A new lead has been created by :creator and assigned to your team.',
+        'lead_details' => 'Lead Details',
+        'view_lead_button' => 'View Lead',
+        'footer_text' => 'This notification was sent automatically by the CRM system.',
     ],
 
     'views' => [

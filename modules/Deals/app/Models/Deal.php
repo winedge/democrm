@@ -221,12 +221,17 @@ class Deal extends Model implements ResourceableContract
      */
     public function fillStatus(DealStatus $status, ?string $lostReason = null): static
     {
+        // Check if the current user has permission to change the status
+        if (auth()->check() && !auth()->user()->can('changeStatus', [$this, $status])) {
+            throw new \Illuminate\Auth\Access\AuthorizationException('You are not authorized to change the deal status.');
+        }
+    
         $this->status = $status;
-
+    
         if ($status === DealStatus::lost) {
             $this->lost_reason = $lostReason;
         }
-
+    
         return $this;
     }
 

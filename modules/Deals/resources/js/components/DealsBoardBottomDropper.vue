@@ -27,6 +27,7 @@
 
     <div class="flex justify-end">
       <div
+        v-if="currentUser.super_admin"
         class="h-dropper relative w-1/3 border-t-2 border-success-500 sm:w-1/5"
       >
         <SortableDraggable
@@ -48,6 +49,7 @@
       </div>
 
       <div
+        v-if="currentUser.super_admin"
         class="h-dropper relative w-1/3 border-t-2 border-danger-500 sm:w-1/5"
       >
         <SortableDraggable
@@ -95,8 +97,9 @@
 
 <script setup>
 // https://stackoverflow.com/questions/51619243/vue-draggable-delete-item-by-dragging-into-designated-region
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
+import { useApp } from '@/Core/composables/useApp'
 import { useForm } from '@/Core/composables/useForm'
 import { useResourceable } from '@/Core/composables/useResourceable'
 import { throwConfetti } from '@/Core/utils'
@@ -110,6 +113,10 @@ defineProps({
 const emit = defineEmits(['deleted', 'won', 'refreshRequested'])
 
 const markingAsLostID = ref(null)
+const { currentUser } = useApp()
+
+// Check if current user is a superadmin - not using this computed property anymore
+// const isSuperAdmin = computed(() => currentUser.value.super_admin === true)
 
 const { form: changeStatusForm } = useForm(
   { lost_reason: null },

@@ -1,0 +1,59 @@
+<?php
+/**
+ * Concord CRM - https://www.concordcrm.com
+ *
+ * @version   1.6.0
+ *
+ * @link      Releases - https://www.concordcrm.com/releases
+ * @link      Terms Of Service - https://www.concordcrm.com/terms
+ *
+ * @copyright Copyright (c) 2022-2025 KONKORD DIGITAL
+ */
+
+namespace Modules\Deals\Notifications;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Modules\Core\MailableTemplate\MailableTemplate;
+use Modules\Core\Notification;
+use Modules\Deals\Mail\NewDealCreated as NewDealCreatedMailable;
+use Modules\Deals\Models\Deal;
+use Modules\Users\Models\User;
+
+class NewDealCreated extends Notification implements ShouldQueue
+{
+    /**
+     * Create a new notification instance.
+     */
+    public function __construct(protected Deal $deal, protected User $creator) {}
+
+    /**
+     * Get the mail representation of the notification.
+     */
+    public function toMail(object $notifiable): NewDealCreatedMailable&MailableTemplate
+    {
+        return (new NewDealCreatedMailable($this->deal, $this->creator))->to($notifiable);
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray($notifiable): array
+    {
+        return [
+            'path' => $this->deal->resource()->viewRouteFor($this->deal),
+            'lang' => [
+                'key' => 'deals::deal.notifications.new_deal_created',
+                'attrs' => [
+                    'creator' => $this->creator->name,
+                    'name' => $this->deal->name,
+                    'amount' => $this->deal->amount ? money($this->deal->amount, $this->deal->currency)->format() : __('core::app.not_specified'),
+                    'expected_close_date' => $this->deal->expected_close_date ? $this->deal->expected_close_date->format('M d, Y') : __('core::app.not_specified'),
+                    'pipeline' => $this->deal->pipeline->name,
+                    'stage' => $this->deal->stage->name,
+                ],
+            ],
+        ];
+    }
+}

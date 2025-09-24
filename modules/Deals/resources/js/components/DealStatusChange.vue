@@ -2,7 +2,7 @@
   <div v-if="dealStatus === 'open'">
     <div class="inline-flex">
       <IButton
-        v-if="dealStatus !== 'won'"
+        v-if="dealStatus !== 'won' && currentUser.super_admin"
         v-i-tooltip="$t('deals::deal.actions.mark_as_won')"
         variant="success"
         class="mr-1.5 px-5"
@@ -12,7 +12,7 @@
         @click="changeStatus('won')"
       />
 
-      <IPopover v-if="dealStatus !== 'lost'" :placement="lostPopoverPlacement">
+      <IPopover v-if="dealStatus !== 'lost' && currentUser.super_admin" :placement="lostPopoverPlacement">
         <IPopoverButton variant="danger" class="px-5">
           <span
             v-i-tooltip="$t('deals::deal.actions.mark_as_lost')"
@@ -74,6 +74,7 @@ import { reactive } from 'vue'
 import { useForm } from '@/Core/composables/useForm'
 import { useResourceable } from '@/Core/composables/useResourceable'
 import { throwConfetti } from '@/Core/utils'
+import { useApp } from '@/Core/composables/useApp'
 
 import LostReasonField from './DealLostReasonField.vue'
 
@@ -84,6 +85,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['updated'])
+const { currentUser } = useApp()
 
 const { form } = useForm({ lost_reason: null }, { resetOnSuccess: true })
 

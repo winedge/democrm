@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Test</title>
+</head>
+<body>
+    <h1>CRM Notification Sound Test</h1>
+    <button onclick="testAudio()">Test MP3 Sound</button>
+    <button onclick="testBeep()">Test Generated Beep</button>
+    <button onclick="testBoth()">Test Both</button>
+    
+    <div id="status"></div>
+    
+    <script>
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML += '<br>' + message;
+            console.log(message);
+        }
+        
+        function testAudio() {
+            updateStatus('Testing MP3 audio...');
+            const audio = new Audio('/audio/notification.mp3');
+            audio.volume = 0.7;
+            
+            audio.addEventListener('loadstart', () => updateStatus('Audio loading started'));
+            audio.addEventListener('canplay', () => updateStatus('Audio can play'));
+            audio.addEventListener('play', () => updateStatus('Audio started playing'));
+            audio.addEventListener('ended', () => updateStatus('Audio finished playing'));
+            audio.addEventListener('error', (e) => updateStatus('Audio error: ' + e.message));
+            
+            audio.play().then(() => {
+                updateStatus('MP3 play() succeeded');
+            }).catch(error => {
+                updateStatus('MP3 play() failed: ' + error.message);
+            });
+        }
+        
+        function testBeep() {
+            updateStatus('Testing generated beep...');
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.15);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.4);
+                
+                oscillator.onended = () => updateStatus('Generated beep finished');
+                
+                updateStatus('Generated beep started');
+            } catch (error) {
+                updateStatus('Generated beep failed: ' + error.message);
+            }
+        }
+        
+        function testBoth() {
+            testAudio();
+            setTimeout(testBeep, 1000);
+        }
+    </script>
+</body>
+</html>

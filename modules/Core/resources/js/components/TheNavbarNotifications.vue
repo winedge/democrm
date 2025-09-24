@@ -138,24 +138,128 @@ async function loadNotifications() {
 }
 
 function sendStaticFloatingNotification(notification) {
+  const options = {
+    closed: () => markNotificationAsRead(notification.id),
+    action: {
+      text: t('core::app.view_record'),
+      onClick: () => {
+        markNotificationAsRead(notification.id)
+        router.push(notification.data.path)
+
+        return true
+      },
+    },
+  }
+  
+  // Check if notification should be persistent (default to 8 seconds)
+  let duration = 8000
+  if (notification.data.persistent) {
+    duration = -1 // -1 means no auto-dismiss
+  }
+  
+  // ALWAYS play sound for notifications - make it more prominent
+  playNotificationSound()
+  
   Innoclapps.notify(
     localizeNotification(notification),
     null,
-    -1,
-    {
-      closed: () => markNotificationAsRead(notification.id),
-      action: {
-        text: t('core::app.view_record'),
-        onClick: () => {
-          markNotificationAsRead(notification.id)
-          router.push(notification.data.path)
-
-          return true
-        },
-      },
-    },
+    duration,
+    options,
     'static'
   )
+}
+
+// Separate function to handle notification sounds
+function playNotificationSound() {
+  console.log('Attempting to play notification sound...')
+  
+  // Try multiple approaches to ensure sound plays
+  const soundMethods = [
+    // Method 1: Try to play MP3 file
+    () => {
+      const audio = new Audio('/audio/notification.mp3')
+      audio.volume = 0.7
+      audio.preload = 'auto'
+      return audio.play()
+    },
+    
+    // Method 2: Try alternative MP3 path
+    () => {
+      const audio = new Audio('./audio/notification.mp3')
+      audio.volume = 0.7
+      audio.preload = 'auto'
+      return audio.play()
+    },
+    
+    // Method 3: Generate beep sound with Web Audio API
+    () => {
+      return new Promise((resolve, reject) => {
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+          
+          // Resume audio context if suspended
+          if (audioContext.state === 'suspended') {
+            audioContext.resume()
+          }
+          
+          const oscillator = audioContext.createOscillator()
+          const gainNode = audioContext.createGain()
+          
+          oscillator.connect(gainNode)
+          gainNode.connect(audioContext.destination)
+          
+          // Create a pleasant two-tone notification sound
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime)
+          oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.15)
+          oscillator.type = 'sine'
+          
+          gainNode.gain.setValueAtTime(0.4, audioContext.currentTime)
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4)
+          
+          oscillator.start(audioContext.currentTime)
+          oscillator.stop(audioContext.currentTime + 0.4)
+          
+          oscillator.onended = () => resolve()
+          
+          setTimeout(() => resolve(), 500) // Fallback timeout
+        } catch (error) {
+          reject(error)
+        }
+      })
+    },
+    
+    // Method 4: Try system notification sound (if available)
+    () => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        // Create a silent notification just to trigger system sound
+        const systemNotification = new Notification('', {
+          silent: false,
+          tag: 'crm-sound-trigger'
+        })
+        setTimeout(() => systemNotification.close(), 100)
+        return Promise.resolve()
+      }
+      return Promise.reject('No system notification support')
+    }
+  ]
+  
+  // Try each method until one succeeds
+  async function tryNextMethod(index = 0) {
+    if (index >= soundMethods.length) {
+      console.error('All notification sound methods failed')
+      return
+    }
+    
+    try {
+      await soundMethods[index]()
+      console.log(`Notification sound played successfully using method ${index + 1}`)
+    } catch (error) {
+      console.warn(`Sound method ${index + 1} failed:`, error)
+      tryNextMethod(index + 1)
+    }
+  }
+  
+  tryNextMethod()
 }
 
 useGlobalEventListener('new-notification', notification => {

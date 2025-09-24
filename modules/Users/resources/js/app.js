@@ -56,6 +56,45 @@ if (window.Innoclapps) {
       })
     }
 
+    // Preload and unlock notification audio on first user interaction.
+    // Many browsers block autoplay of audio; playing a short audio on the
+    // first user gesture unlocks subsequent programmatic audio.play() calls.
+    try {
+      const audio = new Audio('/audio/notification.mp3')
+      audio.preload = 'auto'
+      // store a reference so other parts can reuse or check if preloaded
+      window.Innoclapps = window.Innoclapps || {}
+      window.Innoclapps.preloadedNotificationAudio = audio
+
+      const unlockAudio = async () => {
+        try {
+          // try to play/pause to unlock the audio output
+          await audio.play()
+          audio.pause()
+          audio.currentTime = 0
+        } catch (e) {
+          // If play() is rejected, try to resume AudioContext (some browsers)
+          try {
+            const Ctx = window.AudioContext || window.webkitAudioContext
+            if (Ctx) {
+              const ctx = new Ctx()
+              await ctx.resume()
+            }
+          } catch (err) {
+            // ignore
+          }
+        }
+      }
+
+      // Unlock on first user gesture
+      document.addEventListener('click', unlockAudio, { once: true })
+      document.addEventListener('keydown', unlockAudio, { once: true })
+    } catch (e) {
+      // ignore any errors during preloading
+      // eslint-disable-next-line no-console
+      console.debug('Notification audio preload failed', e)
+    }
+
     settingsRoutes.forEach(route => router.addRoute('settings', route))
 
     router.addRoute({

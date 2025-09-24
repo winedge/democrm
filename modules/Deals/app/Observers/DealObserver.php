@@ -16,6 +16,8 @@ use Modules\Core\Models\PinnedTimelineSubject;
 use Modules\Deals\Enums\DealStatus;
 use Modules\Deals\Models\Deal;
 use Modules\Deals\Models\Stage;
+use Modules\Deals\Notifications\NewDealCreated;
+use Modules\Users\Models\User;
 
 class DealObserver
 {
@@ -63,6 +65,9 @@ class DealObserver
         if ($deal->board_order === 0) { // via tests?
             Deal::withoutEvents(fn () => $deal->newQuery()->increment('board_order'));
         }
+
+        // Send notifications to assigned team members
+        $this->sendNewDealNotifications($deal);
     }
 
     /**
@@ -129,5 +134,46 @@ class DealObserver
         if ($deal->isForceDeleting()) {
             $deal->purge();
         }
+    }
+
+    /**
+     * Send notifications to assigned team members when a new deal is created.
+     */
+    protected function sendNewDealNotifications(Deal $deal): void
+    {
+        $creator = $deal->creator;
+        
+        if (!$creator) {
+            return;
+        }
+
+        // Get all users who should be notified
+        $usersToNotify = collect();
+
+        // Add the deal owner if they exist and are not the creator
+        if ($deal->user_id && $deal->user_id !== $creator->id) {
+            $usersToNotify->push($deal->user);
+        }
+
+        // Add team members if the deal owner has teams
+        if ($deal->user_id) {
+            $dealOwner = $deal->user;
+            if ($dealOwner) {
+                // Get team members of the deal owner
+                $teamMembers = $dealOwner->teams()
+                    ->with('users')
+                    ->get()
+                    ->pluck('users')
+                    ->flatten()
+                    ->filter(fn($user) => $user->id !== $creator->id && $user->id !== $dealOwner->id);
+                
+                $usersToNotify = $usersToNotify->merge($teamMembers);
+            }
+        }
+
+        // Send notifications to all users
+        $usersToNotify->unique('id')->each(function (User $user) use ($deal, $creator) {
+            $user->notify(new NewDealCreated($deal, $creator));
+        });
     }
 }
